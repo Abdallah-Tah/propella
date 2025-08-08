@@ -10,7 +10,11 @@ class Embedding extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 'source_type', 'source_id', 'position', 'metadata_json',
+        'user_id',
+        'source_type',
+        'source_id',
+        'position',
+        'metadata_json',
     ];
 
     protected $casts = [

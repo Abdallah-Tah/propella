@@ -6,5 +6,5 @@ SCREENING: {{ isset($job['screening_questions']) ? implode("\n", $job['screening
 
 PROFILE SNIPPETS:
 @foreach(($snippets ?? []) as $snippet)
-- {{ is_array($snippet) ? ($snippet['text'] ?? '') : (is_string($snippet) ? $snippet : '') }}
+    - {{ is_array($snippet) ? ($snippet['text'] ?? '') : (is_string($snippet) ? $snippet : '') }}
 @endforeach
