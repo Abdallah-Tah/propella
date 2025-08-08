@@ -15,36 +15,22 @@ import {
 } from 'lucide-react';
 import { Link } from '@inertiajs/react';
 
-export default function Dashboard() {
-  // Mock data - in real app this would come from props
-  const stats = {
-    totalProposals: 24,
-    thisWeek: 8,
-    winRate: 32,
-    avgResponseTime: '2.3h'
+interface Props {
+  stats: {
+    totalProposals: number;
+    thisWeek: number;
+    resumeCount: number;
+    avgResponseTime: string;
   };
+  recentProposals: Array<{
+    id: number;
+    title: string;
+    date: string;
+    status: string;
+  }>;
+}
 
-  const recentProposals = [
-    {
-      id: 1,
-      title: 'React Developer for E-commerce Dashboard',
-      date: '2 hours ago',
-      status: 'sent'
-    },
-    {
-      id: 2,
-      title: 'Full-stack Web App with Next.js',
-      date: '5 hours ago',
-      status: 'draft'
-    },
-    {
-      id: 3,
-      title: 'UI/UX Designer for Mobile App',
-      date: '1 day ago',
-      status: 'sent'
-    }
-  ];
-
+export default function Dashboard({ stats, recentProposals }: Props) {
   return (
     <AppLayout breadcrumbs={[{ title: 'Dashboard', href: '/dashboard' }]}>
       <Head title="Dashboard" />
@@ -93,12 +79,12 @@ export default function Dashboard() {
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Win Rate</CardTitle>
-              <Target className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Resumes</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.winRate}%</div>
-              <p className="text-xs text-muted-foreground">Above average</p>
+              <div className="text-2xl font-bold">{stats.resumeCount}</div>
+              <p className="text-xs text-muted-foreground">Uploaded files</p>
             </CardContent>
           </Card>
           

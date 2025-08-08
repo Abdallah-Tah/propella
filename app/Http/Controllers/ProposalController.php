@@ -7,6 +7,7 @@ use Prism\Prism\Prism;
 use Prism\Prism\Enums\Provider;
 use App\Models\Embedding;
 use App\Models\Generation;
+use App\Jobs\GenerateProposal;
 use Illuminate\Support\Str;
 
 class ProposalController extends Controller
@@ -15,54 +16,79 @@ class ProposalController extends Controller
     {
         $validated = $request->validate([
             'job' => 'required|array',
+            'job.title' => 'required|string|max:500',
+            'job.description' => 'required|string|max:10000',
+            'job.skills' => 'nullable|array',
+            'job.screening_questions' => 'nullable|array',
             'settings' => 'nullable|array'
         ]);
 
         $job = $validated['job'];
 
-        // Convert job description to embedding vector
-        $jobVector = app('prism.embedding')
-            ->using(Provider::OpenAI, 'text-embedding-3-small')
-            ->embed($job['description']);
+        try {
+            // For now, skip vector similarity search since we have no embeddings
+            $snippets = [];
 
-        // Retrieve top-k resume chunks
-        $snippets = Embedding::orderByRaw('embedding <=> ?', [$jobVector])
-            ->limit(6)
-            ->pluck('metadata_json')
-            ->toArray();
+            // Build prompt
+            $promptBody = view('prompts.proposal', compact('job', 'snippets'))
+                ->render();
 
-        // Build prompt
-        $promptBody = view('prompts.proposal', compact('job', 'snippets'))
-            ->render();
+            // Generate proposal using PrismPHP
+            $response = Prism::text()
+                ->using(Provider::OpenAI, 'gpt-4o-mini')
+                ->withSystemPrompt('You are an expert freelancer who writes winning Upwork proposals. Write a professional, concise proposal that demonstrates understanding of the project, highlights relevant experience, and includes a clear call-to-action.')
+                ->withPrompt($promptBody)
+                ->asText();
 
-        // Generate proposal using PrismPHP
-        $response = Prism::text()
-            ->using(Provider::OpenAI, 'gpt-4.1-mini')
-            ->withSystemPrompt('You write tight, client-winning Upwork proposals. Be specific, quantify results, avoid clichés.')
-            ->withPrompt($promptBody)
-            ->asText();
+            // Save generation
+            $gen = Generation::create([
+                'user_id' => $request->user()?->id,
+                'job_hash' => Str::uuid(),
+                'source_json' => $job,
+                'output_md' => $response->text ?? null,
+                'tokens_in' => $response->usage->inputTokens ?? 0,
+                'tokens_out' => $response->usage->outputTokens ?? 0,
+                'cost_cents' => 0,
+                'status' => 'success'
+            ]);
 
-        // Save generation
-        $gen = Generation::create([
-            'user_id' => $request->user()?->id,
-            'job_hash' => Str::uuid(),
-            'source_json' => $job,
-            'output_md' => $response->text ?? null,
-            'tokens_in' => $response->usage->inputTokens ?? 0,
-            'tokens_out' => $response->usage->outputTokens ?? 0,
-            'cost_cents' => 0,
-            'status' => 'success'
+            return response()->json([
+                'id' => $gen->id,
+                'proposal_md' => $response->text ?? '',
+                'answers' => [],
+                'coverage' => [],
+                'usage' => [
+                    'input_tokens' => $response->usage->inputTokens ?? 0,
+                    'output_tokens' => $response->usage->outputTokens ?? 0,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to generate proposal',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function generateAsync(Request $request)
+    {
+        $validated = $request->validate([
+            'job' => 'required|array',
+            'job.title' => 'required|string|max:500',
+            'job.description' => 'required|string|max:10000',
+            'job.skills' => 'nullable|array',
+            'settings' => 'nullable|array'
         ]);
 
+        $job = $validated['job'];
+        $settings = $validated['settings'] ?? [];
+
+        // Dispatch job to queue
+        GenerateProposal::dispatch($request->user(), $job, $settings);
+
         return response()->json([
-            'id' => $gen->id,
-            'proposal_md' => $response->text ?? '',
-            'answers' => [],
-            'coverage' => [],
-            'usage' => [
-                'input_tokens' => $response->usage->inputTokens ?? 0,
-                'output_tokens' => $response->usage->outputTokens ?? 0,
-            ]
+            'message' => 'Proposal generation started. Check back in a few moments.',
+            'queued' => true
         ]);
     }
 }

@@ -1,0 +1,9 @@
+John Doe - Software Developer
+
+Experience:
+- 5 years PHP development
+- Laravel framework expert  
+- React.js frontend development
+- Database design and optimization
+
+Skills: PHP, Laravel, JavaScript, React, MySQL, PostgreSQL

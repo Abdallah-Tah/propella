@@ -17,6 +17,7 @@
         "laravel/framework": "^12.0",
         "laravel/horizon": "^5.33",
         "laravel/tinker": "^2.10.1",
+        "predis/predis": "^3.2",
         "prism-php/prism": "^0.83.2",
         "stripe/stripe-php": "^16.6",
         "tightenco/ziggy": "^2.4"

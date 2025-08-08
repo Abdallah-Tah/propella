@@ -11,13 +11,25 @@ class Embedding extends Model
 
     protected $fillable = [
         'user_id',
-        'source_type',
-        'source_id',
-        'position',
+        'resume_id',
+        'chunk_text',
+        'chunk_index',
+        'embedding',
         'metadata_json',
     ];
 
     protected $casts = [
         'metadata_json' => 'array',
+        'embedding' => 'array',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function resume()
+    {
+        return $this->belongsTo(Resume::class);
+    }
 }
