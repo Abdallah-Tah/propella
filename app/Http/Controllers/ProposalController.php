@@ -24,6 +24,12 @@ class ProposalController extends Controller
         ]);
 
         $job = $validated['job'];
+        $settings = $validated['settings'] ?? [];
+
+        // User-adjustable settings
+        $tone = $settings['tone'] ?? 'professional';
+        $length = $settings['length'] ?? 'medium';
+        $model = $settings['model'] ?? 'gpt-4o-mini';
 
         try {
             // For now, skip vector similarity search since we have no embeddings
@@ -33,10 +39,23 @@ class ProposalController extends Controller
             $promptBody = view('prompts.proposal', compact('job', 'snippets'))
                 ->render();
 
+            // Build system prompt from settings
+            $lengthGuidance = [
+                'short' => 'Keep it ~120-160 words.',
+                'medium' => 'Keep it ~200-300 words.',
+                'long' => 'Keep it ~350-500 words.'
+            ][$length] ?? 'Keep it ~200-300 words.';
+
+            $systemPrompt = sprintf(
+                'You are an expert freelancer writing winning Upwork proposals. Tone: %s. %s Avoid clichés, be specific, quantify results, and close with a clear CTA.',
+                $tone,
+                $lengthGuidance
+            );
+
             // Generate proposal using PrismPHP
             $response = Prism::text()
-                ->using(Provider::OpenAI, 'gpt-4o-mini')
-                ->withSystemPrompt('You are an expert freelancer who writes winning Upwork proposals. Write a professional, concise proposal that demonstrates understanding of the project, highlights relevant experience, and includes a clear call-to-action.')
+                ->using(Provider::OpenAI, $model)
+                ->withSystemPrompt($systemPrompt)
                 ->withPrompt($promptBody)
                 ->asText();
 

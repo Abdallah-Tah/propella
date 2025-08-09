@@ -30,12 +30,12 @@ Description:
 === INSTRUCTIONS ===
 Write a compelling Upwork proposal that:
 
-1. **Opening Hook**: Start with a personalized greeting that shows you understand their specific needs
-2. **Relevant Experience**: Highlight 2-3 most relevant experiences or skills that match their requirements
-3. **Value Proposition**: Clearly explain how you'll solve their problem and what makes you the best choice
-4. **Project Approach**: Briefly outline your approach or methodology for this project
-5. **Portfolio/Examples**: Mention specific examples or ask to share relevant portfolio pieces
-6. **Call to Action**: End with a clear next step and invitation to discuss further
+1. **Opening Hook**: Start with a personalized greeting that shows you understand their specific needs.
+2. **Relevant Experience**: Highlight 2-3 most relevant experiences or skills that match their requirements.
+3. **Value Proposition**: Clearly explain how you'll solve their problem and what makes you the best choice.
+4. **Project Approach**: Briefly outline your approach or methodology for this project.
+5. **Portfolio/Examples**: Mention specific examples or ask to share relevant portfolio pieces.
+6. **Call to Action**: End with a clear next step and invitation to discuss further.
 
 Keep the proposal:
 - Professional but personable
@@ -44,12 +44,4 @@ Keep the proposal:
 - Results-focused
 - Easy to scan with clear structure
 
-Write the proposal now:ob['title'] ?? '' }}
-{{ $job['description'] ?? '' }}
-SKILLS: {{ isset($job['skills']) ? implode(', ', $job['skills']) : '' }}
-SCREENING: {{ isset($job['screening_questions']) ? implode("\n", $job['screening_questions']) : '' }}
-
-PROFILE SNIPPETS:
-@foreach(($snippets ?? []) as $snippet)
-    - {{ is_array($snippet) ? ($snippet['text'] ?? '') : (is_string($snippet) ? $snippet : '') }}
-@endforeach
+Write the proposal now.

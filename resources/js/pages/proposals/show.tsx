@@ -13,6 +13,8 @@ import {
   CheckCircle2 
 } from 'lucide-react';
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Job {
   title: string;
@@ -114,9 +116,11 @@ export default function ProposalShow({ generation }: Props) {
                   Generated Proposal
                 </CardTitle>
               </CardHeader>
-              <CardContent className="prose max-w-none">
-                <div className="bg-gray-50 p-4 rounded-lg font-mono text-sm whitespace-pre-wrap border">
-                  {generation.output_md}
+              <CardContent className="prose max-w-none dark:prose-invert">
+                <div className="rounded-lg border bg-card text-card-foreground p-4">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {generation.output_md}
+                  </ReactMarkdown>
                 </div>
               </CardContent>
             </Card>

@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { useState } from 'react';
 import { Wand2, Copy, Settings2, FileText, Zap, Clock, Target } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function ProposalsPage() {
   const [formData, setFormData] = useState({
@@ -41,7 +43,7 @@ export default function ProposalsPage() {
       const skillsArray = formData.skills.split(',').map(s => s.trim()).filter(s => s);
       const questionsArray = formData.questions.split('\n').map(s => s.trim()).filter(s => s);
       
-      const res = await fetch('/proposals/generate', {
+      const res = await fetch('/api/proposals/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -301,14 +303,11 @@ export default function ProposalsPage() {
                 </div>
               ) : result ? (
                 <div className="space-y-4">
-                  <div className="bg-muted/30 rounded-lg p-4 border">
+                  <div className="rounded-lg border bg-card text-card-foreground p-4">
                     <div className="prose prose-sm max-w-none dark:prose-invert">
-                      <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                        {result}
-                      </div>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{result}</ReactMarkdown>
                     </div>
                   </div>
-                  
                   <div className="flex gap-2">
                     <Button 
                       variant="outline" 
