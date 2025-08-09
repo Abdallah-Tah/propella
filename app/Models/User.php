@@ -55,4 +55,56 @@ class User extends Authenticatable
     {
         return $this->hasMany(Generation::class);
     }
+
+    // Enhanced model relationships
+    public function profile()
+    {
+        return $this->hasOne(Profile::class);
+    }
+
+    public function screeningAnswers()
+    {
+        return $this->hasMany(ScreeningAnswer::class);
+    }
+
+    public function jobApplications()
+    {
+        return $this->hasMany(JobApplication::class);
+    }
+
+    public function portfolioItems()
+    {
+        return $this->hasMany(PortfolioItem::class);
+    }
+
+    public function jobMatches()
+    {
+        return $this->hasMany(JobMatch::class);
+    }
+
+    // Team relationships
+    public function ownedTeams()
+    {
+        return $this->hasMany(Team::class, 'owner_id');
+    }
+
+    public function teams()
+    {
+        return $this->belongsToMany(Team::class, 'team_members')
+            ->withPivot(['role', 'permissions_json', 'joined_at', 'is_active'])
+            ->withTimestamps();
+    }
+
+    public function activeTeams()
+    {
+        return $this->belongsToMany(Team::class, 'team_members')
+            ->withPivot(['role', 'permissions_json', 'joined_at', 'is_active'])
+            ->wherePivot('is_active', true)
+            ->withTimestamps();
+    }
+
+    public function teamMemberships()
+    {
+        return $this->hasMany(TeamMember::class);
+    }
 }

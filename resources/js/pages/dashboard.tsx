@@ -11,7 +11,6 @@ import {
   Target,
   Sparkles,
   WandSparkles,
-  Upload,
   ArrowRight,
   Users,
 } from 'lucide-react';
