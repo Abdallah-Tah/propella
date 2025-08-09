@@ -20,8 +20,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $stats = [
             'totalProposals' => $user->generations()->count(),
             'thisWeek' => $user->generations()->where('created_at', '>=', now()->subWeek())->count(),
-            'resumeCount' => $user->resumes()->count(),
-            'avgResponseTime' => 'N/A'
+            'winRate' => 0, // TODO: Calculate based on success metrics
+            'avgResponseTime' => 'N/A',
+            'resumes' => $user->resumes()->count(),
+            'proposals_generated' => $user->generations()->count(),
+            'proposals_this_month' => $user->generations()->where('created_at', '>=', now()->subMonth())->count(),
         ];
 
         // Get recent proposals
@@ -38,7 +41,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ];
             });
 
-        return Inertia::render('dashboard-enhanced', [
+        return Inertia::render('dashboard', [
             'stats' => $stats,
             'recentProposals' => $recentProposals
         ]);

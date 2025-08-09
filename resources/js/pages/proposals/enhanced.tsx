@@ -184,7 +184,7 @@ export default function ProposalsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Input Card */}
           <div className="space-y-6">
-            <Card className="h-fit">
+            <Card className="h-fit glass-surface">
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -349,7 +349,7 @@ export default function ProposalsPage() {
           )}
 
           {/* Result Card */}
-          <Card className="h-fit">
+          <Card className="h-fit glass-surface">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div>

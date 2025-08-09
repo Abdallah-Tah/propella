@@ -1,27 +1,28 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Wand2, 
   FileText, 
   TrendingUp, 
   Clock,
+  Zap,
+  Target,
+  Sparkles,
+  WandSparkles,
+  Upload,
   ArrowRight,
   Users,
-  Zap,
-  Target
 } from 'lucide-react';
-import { Link } from '@inertiajs/react';
 
 export default function Dashboard() {
-  // Mock data - in real app this would come from props
-  const stats = {
-    totalProposals: 24,
-    thisWeek: 8,
-    winRate: 32,
-    avgResponseTime: '2.3h'
+  const props = usePage().props as any;
+  const stats = props.stats || {
+    totalProposals: 0,
+    thisWeek: 0,
+    winRate: 0,
+    avgResponseTime: '0h'
   };
 
   const recentProposals = [
@@ -29,19 +30,19 @@ export default function Dashboard() {
       id: 1,
       title: 'React Developer for E-commerce Dashboard',
       date: '2 hours ago',
-      status: 'sent'
+      status: 'sent' as const
     },
     {
       id: 2,
       title: 'Full-stack Web App with Next.js',
       date: '5 hours ago',
-      status: 'draft'
+      status: 'draft' as const
     },
     {
       id: 3,
       title: 'UI/UX Designer for Mobile App',
       date: '1 day ago',
-      status: 'sent'
+      status: 'sent' as const
     }
   ];
 
@@ -52,27 +53,36 @@ export default function Dashboard() {
       <div className="p-6 max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Welcome back!</h1>
-              <p className="text-muted-foreground">Ready to create winning proposals?</p>
+          <div className="card-gradient p-8 rounded-2xl">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+              <div>
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-500/20 to-sky-500/20 rounded-xl mb-4">
+                  <Sparkles className="h-6 w-6 text-blue-600 icon-burst" />
+                </div>
+                <h1 className="text-3xl font-bold mb-2 text-gradient-blue">
+                  Welcome back!
+                </h1>
+                <p className="text-muted-foreground">Ready to create winning proposals?</p>
+              </div>
+              
+              <Button size="lg" className="btn-gradient" asChild>
+                <Link href="/proposals">
+                  <WandSparkles className="mr-2 h-5 w-5" />
+                  Generate Proposal
+                </Link>
+              </Button>
             </div>
-            
-            <Button size="lg" asChild>
-              <Link href="/proposals">
-                <Wand2 className="mr-2 h-5 w-5" />
-                Generate Proposal
-              </Link>
-            </Button>
           </div>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
+          <Card className="card-gradient">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Proposals</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
+              <div className="p-2 bg-gradient-to-br from-blue-500/10 to-sky-500/10 rounded-lg">
+                <FileText className="h-4 w-4 text-blue-600" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalProposals}</div>
@@ -80,10 +90,12 @@ export default function Dashboard() {
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="card-gradient">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">This Week</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <div className="p-2 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg">
+                <TrendingUp className="h-4 w-4 text-green-600" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.thisWeek}</div>
@@ -91,10 +103,12 @@ export default function Dashboard() {
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="card-gradient">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Win Rate</CardTitle>
-              <Target className="h-4 w-4 text-muted-foreground" />
+              <div className="p-2 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 rounded-lg">
+                <Target className="h-4 w-4 text-cyan-600" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.winRate}%</div>
@@ -102,10 +116,12 @@ export default function Dashboard() {
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="card-gradient">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Avg Response</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
+              <div className="p-2 bg-gradient-to-br from-sky-500/10 to-cyan-500/10 rounded-lg">
+                <Clock className="h-4 w-4 text-sky-600" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.avgResponseTime}</div>
@@ -116,9 +132,14 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Proposals */}
-          <Card>
+          <Card className="card-gradient">
             <CardHeader>
-              <CardTitle>Recent Proposals</CardTitle>
+              <CardTitle className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-br from-blue-500/10 to-sky-500/10 rounded-lg">
+                  <Clock className="h-4 w-4 text-blue-600" />
+                </div>
+                Recent Proposals
+              </CardTitle>
               <CardDescription>Your latest proposal generations</CardDescription>
             </CardHeader>
             <CardContent>
@@ -148,16 +169,21 @@ export default function Dashboard() {
           </Card>
 
           {/* Quick Actions */}
-          <Card>
+          <Card className="card-gradient">
             <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
+              <CardTitle className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg">
+                  <Zap className="h-4 w-4 text-green-600" />
+                </div>
+                Quick Actions
+              </CardTitle>
               <CardDescription>Get started with common tasks</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <Button className="w-full justify-start h-12" asChild>
+                <Button className="w-full justify-start h-12 btn-gradient" asChild>
                   <Link href="/proposals">
-                    <Wand2 className="mr-3 h-5 w-5" />
+                    <WandSparkles className="mr-3 h-5 w-5" />
                     <div className="text-left">
                       <div className="font-medium">Generate New Proposal</div>
                       <div className="text-xs opacity-70">Create a winning proposal from job posting</div>
@@ -186,9 +212,14 @@ export default function Dashboard() {
         </div>
 
         {/* Tips Card */}
-        <Card className="mt-6">
+        <Card className="mt-6 card-gradient">
           <CardHeader>
-            <CardTitle>💡 Pro Tips</CardTitle>
+            <CardTitle className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-orange-500/10 to-red-500/10 rounded-lg">
+                <Target className="h-4 w-4 text-orange-600" />
+              </div>
+              💡 Pro Tips
+            </CardTitle>
             <CardDescription>Maximize your proposal success rate</CardDescription>
           </CardHeader>
           <CardContent>

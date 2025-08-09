@@ -109,7 +109,7 @@ export default function ProposalShow({ generation }: Props) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2">
-            <Card>
+            <Card className="glass-surface">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
@@ -129,7 +129,7 @@ export default function ProposalShow({ generation }: Props) {
           {/* Sidebar */}
           <div className="space-y-4">
             {/* Stats */}
-            <Card>
+            <Card className="glass-surface">
               <CardHeader>
                 <CardTitle className="text-base">Generation Stats</CardTitle>
               </CardHeader>
@@ -154,7 +154,7 @@ export default function ProposalShow({ generation }: Props) {
             </Card>
 
             {/* Job Details */}
-            <Card>
+            <Card className="glass-surface">
               <CardHeader>
                 <CardTitle className="text-base">Job Details</CardTitle>
               </CardHeader>
@@ -194,7 +194,7 @@ export default function ProposalShow({ generation }: Props) {
             </Card>
 
             {/* Actions */}
-            <Card>
+            <Card className="glass-surface">
               <CardHeader>
                 <CardTitle className="text-base">Actions</CardTitle>
               </CardHeader>

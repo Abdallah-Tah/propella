@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, FileText, Folder, LayoutGrid, Activity, Users } from 'lucide-react';
+import { BookOpen, FileText, Folder, LayoutGrid, Activity, Users, History as HistoryIcon, Settings } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -19,8 +19,13 @@ const mainNavItems: NavItem[] = [
         icon: FileText,
     },
     {
+        title: 'History',
+        href: '/proposals/history',
+        icon: HistoryIcon,
+    },
+    {
         title: 'Resume Manager',
-        href: '/resume',
+        href: '/resumes',
         icon: Users,
     },
     {
@@ -28,12 +33,17 @@ const mainNavItems: NavItem[] = [
         href: '/horizon',
         icon: Activity,
     },
+    {
+        title: 'Settings',
+        href: '/settings/profile',
+        icon: Settings,
+    },
 ];
 
 const footerNavItems: NavItem[] = [
     {
         title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
+        href: 'https://github.com/Abdallah-Tah/propella',
         icon: Folder,
     },
     {
@@ -50,7 +60,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href="/dashboard" prefetch>
+                            <Link href="/dashboard">
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>
