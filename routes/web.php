@@ -9,7 +9,35 @@ use App\Http\Controllers\ProposalHistoryController;
 use App\Http\Controllers\Settings\ProfileController;
 
 Route::get('/', function () {
-    return Inertia::render('welcome');
+    return Inertia::render('welcome-spectacular');
+})->name('welcome');
+
+// Marketing Pages
+Route::get('/about', function () {
+    return Inertia::render('about');
+})->name('about');
+
+Route::get('/services', function () {
+    return Inertia::render('services');
+})->name('services');
+
+Route::get('/terms', function () {
+    return Inertia::render('terms');
+})->name('terms');
+
+Route::get('/privacy', function () {
+    return Inertia::render('privacy');
+})->name('privacy');
+
+Route::get('/contact', function () {
+    return Inertia::render('contact');
+})->name('contact');
+
+Route::post('/contact', [App\Http\Controllers\ContactController::class, 'submit'])->name('contact.submit');
+
+// Legacy home route redirect
+Route::get('/home', function () {
+    return redirect()->route('welcome');
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {

@@ -16,11 +16,9 @@ import {
   Clock,
   Send,
   CheckCircle,
-  AlertCircle,
   HeadphonesIcon,
   MessageCircle,
   LifeBuoy,
-  Zap,
   Users,
   Globe,
   Heart,
@@ -31,10 +29,9 @@ import { useState } from 'react';
 
 export default function Contact() {
     const { auth } = usePage<SharedData>().props;
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
 
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, processing } = useForm({
         name: auth.user?.name || '',
         email: auth.user?.email || '',
         company: '',
@@ -45,14 +42,12 @@ export default function Contact() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        setIsSubmitting(true);
         
-        // Simulate form submission
-        setTimeout(() => {
-            setIsSubmitting(false);
-            setIsSubmitted(true);
-            reset();
-        }, 2000);
+        post(route('contact.submit'), {
+            onSuccess: () => {
+                setIsSubmitted(true);
+            },
+        });
     };
 
     const contactMethods = [
@@ -340,10 +335,10 @@ export default function Contact() {
 
                                             <Button 
                                                 type="submit" 
-                                                disabled={isSubmitting}
+                                                disabled={processing}
                                                 className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-lg transform hover:scale-105 transition-all duration-300"
                                             >
-                                                {isSubmitting ? (
+                                                {processing ? (
                                                     <>
                                                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                                                         Sending...
