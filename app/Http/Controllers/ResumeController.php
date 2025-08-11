@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Resume;
 use App\Models\Embedding;
 use App\Services\ResumeEnhancementLogger;
+use App\Services\ResumeFileEnhancer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -173,12 +174,26 @@ class ResumeController extends Controller
             abort(403);
         }
 
+        // Determine which version to download based on request parameter
+        $version = $request->get('version', 'original'); // 'original' or 'enhanced'
+
+        if ($version === 'enhanced' && $resume->enhanced_file_path && Storage::exists($resume->enhanced_file_path)) {
+            $filePath = $resume->enhanced_file_path;
+            $fileName = 'Enhanced_' . $resume->original_name;
+            $downloadType = 'enhanced';
+        } else {
+            $filePath = $resume->file_path;
+            $fileName = $resume->original_name;
+            $downloadType = 'original';
+        }
+
         // Check if file exists
-        if (!Storage::exists($resume->file_path)) {
+        if (!Storage::exists($filePath)) {
             Log::error('Resume file not found', [
                 'user_id' => $request->user()->id,
                 'resume_id' => $resume->id,
-                'file_path' => $resume->file_path
+                'file_path' => $filePath,
+                'version' => $version
             ]);
             return redirect()->back()->with('error', 'Resume file not found!');
         }
@@ -188,18 +203,16 @@ class ResumeController extends Controller
         $resume->update(['last_downloaded_at' => now()]);
 
         // Log the download with our enhancement logger
-        ResumeEnhancementLogger::logResumeDownload(
-            $resume,
-            $resume->is_ai_generated ? 'enhanced' : 'original'
-        );
+        ResumeEnhancementLogger::logResumeDownload($resume, $downloadType);
 
         Log::info('Resume download successful', [
             'user_id' => $request->user()->id,
             'resume_id' => $resume->id,
+            'version' => $downloadType,
             'new_download_count' => $resume->download_count
         ]);
 
-        return Storage::download($resume->file_path, $resume->original_name);
+        return Storage::download($filePath, $fileName);
     }
 
     public function enhance(Request $request, Resume $resume)
@@ -278,17 +291,28 @@ class ResumeController extends Controller
 
         ResumeEnhancementLogger::logEnhancementStages($resume);
 
-        // Simulate completion
-        $enhancementResults = ResumeEnhancementLogger::generateEnhancementReport($resume);
+        // Actually create the enhanced file
+        $fileEnhancer = new ResumeFileEnhancer();
+        $enhancementSuccess = $fileEnhancer->enhanceResumeFile($resume);
 
-        $resume->update([
-            'enhancement_status' => 'completed',
-            'enhancement_completed_at' => now(),
-            'enhancement_results' => $enhancementResults,
-            'is_ai_generated' => true
-        ]);
+        if ($enhancementSuccess) {
+            // Generate final enhancement report
+            $enhancementResults = ResumeEnhancementLogger::generateEnhancementReport($resume);
 
-        ResumeEnhancementLogger::logEnhancementSuccess($resume, $enhancementResults);
+            $resume->update([
+                'enhancement_status' => 'completed',
+                'enhancement_completed_at' => now(),
+                'enhancement_results' => $enhancementResults,
+                'is_ai_generated' => true
+            ]);
+
+            ResumeEnhancementLogger::logEnhancementSuccess($resume, $enhancementResults);
+        } else {
+            $resume->update([
+                'enhancement_status' => 'failed',
+                'enhancement_error' => 'Failed to generate enhanced file'
+            ]);
+        }
     }
 
     public function destroy(Request $request, Resume $resume)
@@ -309,8 +333,11 @@ class ResumeController extends Controller
             abort(403);
         }
 
-        // Delete file from storage
+        // Delete files from storage
         Storage::delete($resume->file_path);
+        if ($resume->enhanced_file_path) {
+            Storage::delete($resume->enhanced_file_path);
+        }
 
         // Delete embeddings
         $resume->embeddings()->delete();
