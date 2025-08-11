@@ -146,6 +146,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Resume Management
     Route::get('/resumes', [ResumeController::class, 'index'])->name('resume.index');
     Route::post('/resumes', [ResumeController::class, 'store'])->name('resume.store');
+    Route::get('/resumes/{resume}/download', [ResumeController::class, 'download'])->name('resume.download');
+    Route::post('/resumes/{resume}/enhance', [ResumeController::class, 'enhance'])->name('resume.enhance');
     Route::delete('/resumes/{resume}', [ResumeController::class, 'destroy'])->name('resume.destroy');
 
     // Horizon Dashboard (protected by auth)

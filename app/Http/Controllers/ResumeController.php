@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Resume;
 use App\Models\Embedding;
+use App\Services\ResumeEnhancementLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -39,41 +40,67 @@ class ResumeController extends Controller
             'resume' => 'required|file|mimes:pdf,doc,docx,txt|max:2048', // 2MB to match PHP limit
         ]);
 
-        Log::info('Resume validation passed');
+        try {
+            $file = $request->file('resume');
+            $filePath = $file->store('private/resumes');
+            $fullPath = storage_path('app/' . $filePath);
 
-        $file = $request->file('resume');
+            // Give the file system a moment to complete the write
+            usleep(100000); // 100ms delay
 
-        // Store the file
-        $path = $file->store('resumes', 'private');
+            Log::info('File stored', [
+                'stored_path' => $filePath,
+                'full_path' => $fullPath,
+                'file_exists' => file_exists($fullPath),
+                'file_size' => file_exists($fullPath) ? filesize($fullPath) : 'N/A',
+                'original_name' => $file->getClientOriginalName()
+            ]);
 
-        // Create resume record
-        $resume = Resume::create([
-            'user_id' => $request->user()->id,
-            'original_name' => $file->getClientOriginalName(),
-            'file_path' => $path,
-            'file_type' => $file->getClientOriginalExtension(),
-            'file_size' => $file->getSize(),
-            'is_processed' => false,
-        ]);
+            $resume = Resume::create([
+                'user_id' => $request->user()->id,
+                'original_name' => $file->getClientOriginalName(),
+                'file_path' => $filePath,
+                'file_type' => $file->getClientOriginalExtension(),
+                'file_size' => $file->getSize(),
+            ]);
 
-        // Extract text (simplified - in real app you'd use PDF parsing libraries)
-        $extractedText = $this->extractText($file);
+            // Parse the file with proper error handling
+            $parserService = new \App\Services\ResumeParserService();
+            $parsedData = $parserService->parse($fullPath);
 
-        // Update with extracted text
-        $resume->update([
-            'extracted_text' => $extractedText,
-            'is_processed' => true,
-            'processed_at' => now(),
-        ]);
+            $resume->update([
+                'extracted_text' => $parsedData['text'],
+                'metadata_json' => $parsedData['metadata'],
+                'is_processed' => true,
+                'processed_at' => now(),
+            ]);
 
-        Log::info('Resume record updated');
+            Log::info('Resume parsed and metadata extracted', [
+                'resume_id' => $resume->id,
+                'metadata' => $parsedData['metadata']
+            ]);
 
-        // Create embeddings for the text chunks
-        $this->createEmbeddings($resume, $extractedText);
+            Log::info('Resume uploaded successfully', [
+                'resume_id' => $resume->id,
+                'file_path' => $filePath
+            ]);
 
-        Log::info('Resume processing completed');
+            // Redirect back with success message
+            return redirect()->back()->with('success', 'Resume uploaded successfully!');
+        } catch (\Exception $e) {
+            Log::error('Resume upload failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'file_info' => isset($file) ? [
+                    'name' => $file->getClientOriginalName(),
+                    'size' => $file->getSize(),
+                    'mime' => $file->getClientMimeType()
+                ] : null
+            ]);
 
-        return redirect()->back()->with('success', 'Resume uploaded and processed successfully!');
+            // Redirect back with error message
+            return redirect()->back()->with('error', 'Failed to upload resume: ' . $e->getMessage());
+        }
     }
 
     private function extractText($file): string
@@ -127,21 +154,174 @@ class ResumeController extends Controller
         }
     }
 
-    public function destroy(Request $request, Resume $resume)
+    public function download(Request $request, Resume $resume)
+    {
+        Log::info('Resume download started', [
+            'user_id' => $request->user()->id,
+            'resume_id' => $resume->id,
+            'resume_name' => $resume->original_name,
+            'file_path' => $resume->file_path
+        ]);
+
+        // Ensure user owns the resume
+        if ($resume->user_id !== $request->user()->id) {
+            Log::warning('Unauthorized resume download attempt', [
+                'user_id' => $request->user()->id,
+                'resume_id' => $resume->id,
+                'owner_id' => $resume->user_id
+            ]);
+            abort(403);
+        }
+
+        // Check if file exists
+        if (!Storage::exists($resume->file_path)) {
+            Log::error('Resume file not found', [
+                'user_id' => $request->user()->id,
+                'resume_id' => $resume->id,
+                'file_path' => $resume->file_path
+            ]);
+            return redirect()->back()->with('error', 'Resume file not found!');
+        }
+
+        // Update download count and timestamp
+        $resume->increment('download_count');
+        $resume->update(['last_downloaded_at' => now()]);
+
+        // Log the download with our enhancement logger
+        ResumeEnhancementLogger::logResumeDownload(
+            $resume,
+            $resume->is_ai_generated ? 'enhanced' : 'original'
+        );
+
+        Log::info('Resume download successful', [
+            'user_id' => $request->user()->id,
+            'resume_id' => $resume->id,
+            'new_download_count' => $resume->download_count
+        ]);
+
+        return Storage::download($resume->file_path, $resume->original_name);
+    }
+
+    public function enhance(Request $request, Resume $resume)
     {
         // Ensure user owns the resume
         if ($resume->user_id !== $request->user()->id) {
+            Log::warning('Unauthorized enhancement attempt', [
+                'user_id' => $request->user()->id,
+                'resume_id' => $resume->id,
+                'owner_id' => $resume->user_id
+            ]);
+            abort(403);
+        }
+
+        try {
+            // Start the enhancement process
+            $resume->update([
+                'enhancement_status' => 'processing',
+                'enhancement_started_at' => now(),
+                'enhancement_error' => null
+            ]);
+
+            // Log the start of enhancement with detailed context
+            ResumeEnhancementLogger::logEnhancementStart($resume, [
+                'user_agent' => $request->userAgent(),
+                'ip_address' => $request->ip(),
+                'file_type' => $resume->file_type,
+                'file_size' => $resume->file_size
+            ]);
+
+            // In a real implementation, you would dispatch a job here:
+            // EnhanceResumeJob::dispatch($resume);
+
+            // For demonstration, we'll simulate the enhancement process
+            $this->simulateEnhancementProcess($resume);
+
+            return response()->json([
+                'message' => 'AI Enhancement started successfully',
+                'status' => 'processing',
+                'estimated_completion' => now()->addMinutes(3)->toISOString(),
+                'stages' => [
+                    'text_analysis' => 'Analyzing resume content and structure',
+                    'skills_optimization' => 'Optimizing skills section and keywords',
+                    'experience_enhancement' => 'Enhancing work experience descriptions',
+                    'format_optimization' => 'Optimizing resume format and structure',
+                    'final_review' => 'Final quality check and validation'
+                ]
+            ]);
+        } catch (\Exception $e) {
+            // Log the failure with comprehensive details
+            ResumeEnhancementLogger::logEnhancementFailure($resume, $e, [
+                'request_data' => $request->all(),
+                'user_agent' => $request->userAgent(),
+                'ip_address' => $request->ip()
+            ]);
+
+            $resume->update([
+                'enhancement_status' => 'failed',
+                'enhancement_error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'error' => 'Enhancement failed: ' . $e->getMessage(),
+                'details' => 'Please check the logs for detailed error information'
+            ], 500);
+        }
+    }
+
+    /**
+     * Simulate the AI enhancement process with detailed logging
+     */
+    private function simulateEnhancementProcess(Resume $resume): void
+    {
+        // This would typically be handled by a queued job
+        // For demonstration, we'll log the detailed process stages
+
+        ResumeEnhancementLogger::logEnhancementStages($resume);
+
+        // Simulate completion
+        $enhancementResults = ResumeEnhancementLogger::generateEnhancementReport($resume);
+
+        $resume->update([
+            'enhancement_status' => 'completed',
+            'enhancement_completed_at' => now(),
+            'enhancement_results' => $enhancementResults,
+            'is_ai_generated' => true
+        ]);
+
+        ResumeEnhancementLogger::logEnhancementSuccess($resume, $enhancementResults);
+    }
+
+    public function destroy(Request $request, Resume $resume)
+    {
+        Log::info('Resume deletion started', [
+            'user_id' => $request->user()->id,
+            'resume_id' => $resume->id,
+            'resume_name' => $resume->original_name
+        ]);
+
+        // Ensure user owns the resume
+        if ($resume->user_id !== $request->user()->id) {
+            Log::warning('Unauthorized deletion attempt', [
+                'user_id' => $request->user()->id,
+                'resume_id' => $resume->id,
+                'owner_id' => $resume->user_id
+            ]);
             abort(403);
         }
 
         // Delete file from storage
-        Storage::disk('private')->delete($resume->file_path);
+        Storage::delete($resume->file_path);
 
         // Delete embeddings
         $resume->embeddings()->delete();
 
         // Delete resume record
         $resume->delete();
+
+        Log::info('Resume deleted successfully', [
+            'user_id' => $request->user()->id,
+            'resume_id' => $resume->id
+        ]);
 
         return redirect()->back()->with('success', 'Resume deleted successfully!');
     }
