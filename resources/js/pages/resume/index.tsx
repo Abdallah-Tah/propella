@@ -21,6 +21,34 @@ import {
 
 interface Resume {
   id: number;
+  user_id: number;
+  original_name: string;
+  file_path: string;
+  enhanced_file_path?: string | null;
+  file_type: string;
+  file_size: number;
+  extracted_text?: string | null;
+  enhanced_text?: string | null;
+  metadata_json?: any | null;
+  is_processed: boolean;
+  processed_at?: string | null;
+  is_default: boolean;
+  processing_status?: string | null;
+  is_ai_generated: boolean;
+  download_count?: number;
+  last_used_at?: string | null;
+  last_downloaded_at?: string | null;
+  enhancement_status?: string | null;
+  enhancement_started_at?: string | null;
+  enhancement_completed_at?: string | null;
+  enhancement_error?: string | null;
+  enhancement_results?: any | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Resume {
+  id: number;
   name: string;
   fileType: string;
   fileSize: string;
@@ -370,10 +398,16 @@ export default function ResumeManager() {
     }
   };
 
-  const downloadResume = (id: number) => {
+  const downloadResume = (id: number, version: 'original' | 'enhanced' = 'original') => {
     try {
-      window.location.href = `/resumes/${id}/download`;
-      showFeedback('success', 'Download Started', 'Your resume download has started.');
+      const url = version === 'enhanced' 
+        ? `/resumes/${id}/download?version=enhanced`
+        : `/resumes/${id}/download`;
+      
+      window.location.href = url;
+      
+      const versionText = version === 'enhanced' ? 'Enhanced' : 'Original';
+      showFeedback('success', 'Download Started', `Your ${versionText} resume download has started.`);
     } catch {
       showFeedback('error', 'Download Failed', 'There was an error downloading your resume. Please try again.');
     }
